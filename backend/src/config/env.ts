@@ -11,6 +11,7 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   JWT_SECRET: z.string().min(10),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  FRONTEND_URL: z.string().url().optional(),
 });
 
 const _env = envSchema.safeParse(process.env);
