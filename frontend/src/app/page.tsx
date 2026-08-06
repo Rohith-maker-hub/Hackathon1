@@ -79,7 +79,7 @@ export default function LandingPage() {
                   Start Building <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Link href="/workflow/new">
+              <Link href="/dashboard/workflows">
                 <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full gap-2 backdrop-blur-sm">
                   View Demo <Layers className="w-5 h-5" />
                 </Button>

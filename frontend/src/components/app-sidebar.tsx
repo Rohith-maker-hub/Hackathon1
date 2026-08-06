@@ -32,9 +32,9 @@ const navItems = [
 ]
 
 const secondaryItems = [
-  { title: "Notifications", icon: Bell, href: "/dashboard/notifications", badge: "3" },
+  { title: "Notifications", icon: Bell, href: "/dashboard", badge: "3" },
   { title: "Settings", icon: Settings, href: "/dashboard/settings" },
-  { title: "Help Center", icon: HelpCircle, href: "/dashboard/help" },
+  { title: "Help Center", icon: HelpCircle, href: "/dashboard" },
 ]
 
 export function AppSidebar() {
