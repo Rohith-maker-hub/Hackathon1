@@ -48,7 +48,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8 pt-6 border-t border-border/50 text-center text-sm text-muted-foreground">
-            Don't have an account? <Link href="/signup" className="text-foreground hover:underline font-medium">Sign up</Link>
+            Don&apos;t have an account? <Link href="/signup" className="text-foreground hover:underline font-medium">Sign up</Link>
           </div>
         </GlassCard>
       </div>
