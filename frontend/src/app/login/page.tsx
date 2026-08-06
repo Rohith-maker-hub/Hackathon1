@@ -1,14 +1,41 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Bot, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GlassCard } from "@/components/ui/glass-card";
 import { PageTransition } from "@/components/ui/animated-transition";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiClient } from "@/config/api";
+import { toast } from "sonner";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const data = await apiClient('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      
+      login(data.token, data.user);
+      toast.success("Login successful!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-background flex flex-col items-center justify-center relative overflow-hidden px-4">
@@ -29,21 +56,37 @@ export default function LoginPage() {
             <p className="text-muted-foreground text-sm">Enter your credentials to access your agents</p>
           </div>
 
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); window.location.href='/dashboard'; }}>
+          <form className="space-y-4" onSubmit={handleLogin}>
             <div className="space-y-2">
               <label className="text-sm font-medium">Email</label>
-              <Input type="email" placeholder="john@company.com" required className="bg-background/50" />
+              <Input 
+                type="email" 
+                placeholder="john@company.com" 
+                required 
+                className="bg-background/50"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="text-sm font-medium">Password</label>
                 <Link href="#" className="text-xs text-primary hover:underline">Forgot password?</Link>
               </div>
-              <Input type="password" placeholder="••••••••" required className="bg-background/50" />
+              <Input 
+                type="password" 
+                placeholder="••••••••" 
+                required 
+                className="bg-background/50"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
 
-            <Button type="submit" className="w-full h-11 mt-6 bg-foreground text-background hover:bg-foreground/90">
-              Sign In <ArrowRight className="w-4 h-4 ml-2" />
+            <Button type="submit" disabled={loading} className="w-full h-11 mt-6 bg-foreground text-background hover:bg-foreground/90">
+              {loading ? "Signing in..." : (
+                <>Sign In <ArrowRight className="w-4 h-4 ml-2" /></>
+              )}
             </Button>
           </form>
 

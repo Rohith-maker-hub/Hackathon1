@@ -1,17 +1,45 @@
 "use client";
 
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Activity, Users, CheckCircle, Zap } from "lucide-react"
-import { MOCK_AGENTS, MOCK_TASKS, MOCK_ANALYTICS_DATA } from "@/lib/mock-data"
+import { MOCK_ANALYTICS_DATA } from "@/lib/mock-data"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { apiClient } from "@/config/api"
+import { toast } from "sonner"
 
 export default function DashboardPage() {
-  const activeAgents = MOCK_AGENTS.filter(a => a.status === "running").length;
-  const completedTasks = MOCK_TASKS.filter(t => t.status === "done").length;
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const data = await apiClient('/dashboard');
+        setStats(data);
+      } catch (error: any) {
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboard();
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-[400px]">Loading dashboard...</div>;
+  }
+
+  // Use mock data as fallback if backend returns empty or error
+  const activeAgents = stats?.agents?.length || 4;
+  const completedTasks = stats?.tasks?.filter((t: any) => t.status === "done").length || 2;
+  const workflowsRunning = stats?.workflows?.length || 12;
   const successRate = 98.4;
+  const agentsList = stats?.agents || [];
+  const tasksList = stats?.tasks || [];
   
   return (
     <div className="space-y-6">
@@ -27,7 +55,7 @@ export default function DashboardPage() {
         {[
           { title: "Active Agents", value: activeAgents.toString(), icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
           { title: "Tasks Completed", value: completedTasks.toString(), icon: CheckCircle, color: "text-green-500", bg: "bg-green-500/10" },
-          { title: "Workflows Running", value: "12", icon: Activity, color: "text-primary", bg: "bg-primary/10" },
+          { title: "Workflows Running", value: workflowsRunning.toString(), icon: Activity, color: "text-primary", bg: "bg-primary/10" },
           { title: "Success Rate", value: `${successRate}%`, icon: Zap, color: "text-yellow-500", bg: "bg-yellow-500/10" },
         ].map((stat, i) => (
           <GlassCard key={i} className="p-6 flex flex-col justify-between">
@@ -75,26 +103,28 @@ export default function DashboardPage() {
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">{activeAgents} Running</Badge>
           </div>
           <div className="space-y-4 flex-1 overflow-y-auto pr-2">
-            {MOCK_AGENTS.filter(a => a.status === "running").map(agent => (
+            {agentsList.map((agent: any) => (
               <div key={agent.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/50">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={agent.avatar} />
-                    <AvatarFallback>{agent.name[0]}</AvatarFallback>
+                    <AvatarImage src={agent.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${agent.name}`} />
+                    <AvatarFallback>{agent.name?.[0]}</AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="font-medium text-sm flex items-center gap-2">
                       {agent.name}
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                      </span>
+                      {agent.status === "running" && (
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                      )}
                     </div>
-                    <div className="text-xs text-muted-foreground truncate w-32">{agent.currentTask}</div>
+                    <div className="text-xs text-muted-foreground truncate w-32">{agent.role || 'Agent'}</div>
                   </div>
                 </div>
                 <div className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-md">
-                  {agent.performance}%
+                  {agent.performance || 100}%
                 </div>
               </div>
             ))}
@@ -116,16 +146,16 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_TASKS.slice(0, 5).map((task) => (
+              {tasksList.slice(0, 5).map((task: any) => (
                 <tr key={task.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 font-medium">{task.title}</td>
+                  <td className="px-4 py-3 font-medium">{task.title || task.name}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${task.assignee}`} />
-                        <AvatarFallback>{task.assignee?.[0]}</AvatarFallback>
+                        <AvatarImage src={`https://api.dicebear.com/7.x/bottts/svg?seed=${task.assignee || 'bot'}`} />
+                        <AvatarFallback>{task.assignee?.[0] || 'B'}</AvatarFallback>
                       </Avatar>
-                      <span>{task.assignee}</span>
+                      <span>{task.assignee || 'Agent'}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -134,11 +164,11 @@ export default function DashboardPage() {
                       task.priority === 'high' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' :
                       'bg-blue-500/10 text-blue-500 border-blue-500/20'
                     }>
-                      {task.priority}
+                      {task.priority || 'medium'}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="capitalize text-muted-foreground">{task.status.replace("-", " ")}</span>
+                    <span className="capitalize text-muted-foreground">{(task.status || 'pending').replace("-", " ")}</span>
                   </td>
                 </tr>
               ))}

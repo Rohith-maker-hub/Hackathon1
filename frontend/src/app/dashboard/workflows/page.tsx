@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react"
+import React, { useState } from "react"
 import { GlassCard } from "@/components/ui/glass-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,19 +9,66 @@ import {
   MousePointer2, Hand, Trash2, Copy, ArrowRight, Activity, 
   CheckCircle2, GitBranch, Split, UserCheck, RotateCw, GitMerge
 } from "lucide-react"
+import { apiClient } from "@/config/api"
+import { toast } from "sonner"
 
 export default function WorkflowBuilderPage() {
+  const [workflowName, setWorkflowName] = useState("Customer Onboarding Workflow");
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await apiClient('/workflows', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: workflowName,
+          description: "Auto-saved workflow",
+          status: "active",
+          nodes: [] // In a real app, this would be the actual canvas state
+        })
+      });
+      toast.success("Workflow saved successfully!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save workflow");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTestRun = async () => {
+    setTesting(true);
+    try {
+      // Assuming ID 1 for test purposes as we don't have a real ID yet
+      await apiClient('/workflows/1/run', { method: 'POST' });
+      toast.success("Workflow execution started!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to start workflow");
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-100px)] -m-4 md:-m-6 lg:-m-8">
       {/* Top Toolbar */}
       <div className="h-14 border-b border-border/50 bg-background flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <Input defaultValue="Customer Onboarding Workflow" className="w-64 h-8 font-medium bg-transparent border-transparent hover:border-border/50 focus:border-primary" />
+          <Input 
+            value={workflowName} 
+            onChange={(e) => setWorkflowName(e.target.value)}
+            className="w-64 h-8 font-medium bg-transparent border-transparent hover:border-border/50 focus:border-primary" 
+          />
           <div className="px-2 py-1 rounded bg-green-500/10 text-green-500 text-xs font-medium border border-green-500/20">Saved</div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-8 gap-2"><Play className="w-3.5 h-3.5" /> Test Run</Button>
-          <Button size="sm" className="h-8 bg-primary hover:bg-primary/90 gap-2"><Save className="w-3.5 h-3.5" /> Publish</Button>
+          <Button onClick={handleTestRun} disabled={testing} variant="outline" size="sm" className="h-8 gap-2">
+            <Play className="w-3.5 h-3.5" /> {testing ? "Running..." : "Test Run"}
+          </Button>
+          <Button onClick={handleSave} disabled={saving} size="sm" className="h-8 bg-primary hover:bg-primary/90 gap-2">
+            <Save className="w-3.5 h-3.5" /> {saving ? "Saving..." : "Publish"}
+          </Button>
         </div>
       </div>
 
